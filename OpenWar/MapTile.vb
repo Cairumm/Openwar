@@ -5,6 +5,7 @@
     Public Property TileType As MapTileType
     Public Property MapRow As Integer
     Public Property MapColumn As Integer
+    Public Property IsVisibleToOpponent As Boolean
 
     Public Enum MapTileType
         Empty

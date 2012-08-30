@@ -22,21 +22,21 @@ Partial Class Startup
     'Do not modify it using the code editor.
     <System.Diagnostics.DebuggerStepThrough()> _
     Private Sub InitializeComponent()
-        Me.txtHumanPlayerName = New System.Windows.Forms.TextBox()
+        Me.txtPlayerName = New System.Windows.Forms.TextBox()
         Me.Label1 = New System.Windows.Forms.Label()
         Me.Label2 = New System.Windows.Forms.Label()
-        Me.txtAIPlayerName = New System.Windows.Forms.TextBox()
+        Me.txtAIName = New System.Windows.Forms.TextBox()
         Me.btnHumanPlayerRandomName = New System.Windows.Forms.Button()
         Me.btnAIPlayerRandomName = New System.Windows.Forms.Button()
         Me.btnStart = New System.Windows.Forms.Button()
         Me.SuspendLayout()
         '
-        'txtHumanPlayerName
+        'txtPlayerName
         '
-        Me.txtHumanPlayerName.Location = New System.Drawing.Point(89, 12)
-        Me.txtHumanPlayerName.Name = "txtHumanPlayerName"
-        Me.txtHumanPlayerName.Size = New System.Drawing.Size(156, 20)
-        Me.txtHumanPlayerName.TabIndex = 0
+        Me.txtPlayerName.Location = New System.Drawing.Point(89, 12)
+        Me.txtPlayerName.Name = "txtPlayerName"
+        Me.txtPlayerName.Size = New System.Drawing.Size(156, 20)
+        Me.txtPlayerName.TabIndex = 0
         '
         'Label1
         '
@@ -56,12 +56,12 @@ Partial Class Startup
         Me.Label2.TabIndex = 3
         Me.Label2.Text = "AI Player"
         '
-        'txtAIPlayerName
+        'txtAIName
         '
-        Me.txtAIPlayerName.Location = New System.Drawing.Point(89, 38)
-        Me.txtAIPlayerName.Name = "txtAIPlayerName"
-        Me.txtAIPlayerName.Size = New System.Drawing.Size(156, 20)
-        Me.txtAIPlayerName.TabIndex = 2
+        Me.txtAIName.Location = New System.Drawing.Point(89, 38)
+        Me.txtAIName.Name = "txtAIName"
+        Me.txtAIName.Size = New System.Drawing.Size(156, 20)
+        Me.txtAIName.TabIndex = 2
         '
         'btnHumanPlayerRandomName
         '
@@ -99,9 +99,9 @@ Partial Class Startup
         Me.Controls.Add(Me.btnAIPlayerRandomName)
         Me.Controls.Add(Me.btnHumanPlayerRandomName)
         Me.Controls.Add(Me.Label2)
-        Me.Controls.Add(Me.txtAIPlayerName)
+        Me.Controls.Add(Me.txtAIName)
         Me.Controls.Add(Me.Label1)
-        Me.Controls.Add(Me.txtHumanPlayerName)
+        Me.Controls.Add(Me.txtPlayerName)
         Me.Name = "Startup"
         Me.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen
         Me.Text = "Player Selection"
@@ -109,10 +109,10 @@ Partial Class Startup
         Me.PerformLayout()
 
     End Sub
-    Friend WithEvents txtHumanPlayerName As System.Windows.Forms.TextBox
+    Friend WithEvents txtPlayerName As System.Windows.Forms.TextBox
     Friend WithEvents Label1 As System.Windows.Forms.Label
     Friend WithEvents Label2 As System.Windows.Forms.Label
-    Friend WithEvents txtAIPlayerName As System.Windows.Forms.TextBox
+    Friend WithEvents txtAIName As System.Windows.Forms.TextBox
     Friend WithEvents btnHumanPlayerRandomName As System.Windows.Forms.Button
     Friend WithEvents btnAIPlayerRandomName As System.Windows.Forms.Button
     Friend WithEvents btnStart As System.Windows.Forms.Button

@@ -66,8 +66,6 @@
     <Import Include="System.Windows.Forms" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AIPlayer.vb" />
-    <Compile Include="HumanPlayer.vb" />
     <Compile Include="Main.Designer.vb">
       <DependentUpon>Main.vb</DependentUpon>
     </Compile>
@@ -75,8 +73,6 @@
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="MapTile.vb" />
-    <Compile Include="Player.vb" />
-    <Compile Include="PlayerBase.vb" />
     <Compile Include="Startup.vb">
       <SubType>Form</SubType>
     </Compile>

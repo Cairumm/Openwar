@@ -4,16 +4,16 @@
         Dim PlayerName As String = String.Empty
         Do
             PlayerName = GetRandomCountryName()
-        Loop Until PlayerName <> Me.txtAIPlayerName.Text
-        Me.txtHumanPlayerName.Text = PlayerName
+        Loop Until PlayerName <> Me.txtAIName.Text
+        Me.txtPlayerName.Text = PlayerName
     End Sub
 
     Private Sub btnAIPlayerRandomName_Click(sender As System.Object, e As System.EventArgs) Handles btnAIPlayerRandomName.Click
         Dim PlayerName As String = String.Empty
         Do
             PlayerName = GetRandomCountryName()
-        Loop Until PlayerName <> Me.txtHumanPlayerName.Text
-        Me.txtAIPlayerName.Text = PlayerName
+        Loop Until PlayerName <> Me.txtPlayerName.Text
+        Me.txtAIName.Text = PlayerName
     End Sub
 
     Private Function GetRandomCountryName() As String
@@ -224,11 +224,11 @@
 
     Private Sub btnStart_Click(sender As System.Object, e As System.EventArgs) Handles btnStart.Click
 
-        Main.AddPlayer(Me.txtHumanPlayerName.Text, False)
-        Main.AddPlayer(Me.txtAIPlayerName.Text, True)
+        Main.PlayerCountryName = txtPlayerName.Text
+        Main.AICountryName = txtAIName.Text
         Me.Hide()
         Main.Show()
-        Main.MainGameLoop()
+
 
     End Sub
 End Class
