@@ -6,11 +6,21 @@
     Public Property PlayerCountryName As String
     Public Property AICountryName As String
 
-    Dim rng As Random
+    Private rng As Random
+
+    Private ButtonAction As String = String.Empty
 
     ' This is updated by the mouse move event so we can highlight the hex that the mouse is over
     Private CurrentMousePosition As New PointF
 
+    Private Enum SelectMode
+        None
+        Build
+        Target
+    End Enum
+    Private SelectionMode As SelectMode
+
+    Private SelectedHexes As New List(Of Integer)
 
 #Region "Hex Map Variables"
     ' This is a list of the coordinates of the upper-left-hand coordinates of each hex
@@ -72,6 +82,32 @@
         BuildBaseButtons_SetVisibility(False)
     End Sub
 
+    Private Sub Main_MouseClick(sender As Object, e As System.Windows.Forms.MouseEventArgs) Handles Me.MouseClick
+        Select Case Me.SelectionMode
+            Case SelectMode.Build
+                    For HexCounter = 0 To 101
+                        Dim UpperLeft As PointF = Me.HexPoints(HexCounter)
+                        Dim x As Single = UpperLeft.X
+                        Dim y As Single = UpperLeft.Y
+
+                        Dim Points(5) As PointF
+                        Points(0) = New PointF(x, y)
+                        Points(1) = New PointF(x + Me.SideLength, y)
+                        Points(2) = New PointF(x + Me.SideLength + Me.ShortSide, y + Me.LongSide)
+                        Points(3) = New PointF(x + Me.SideLength, y + Me.LongSide + Me.LongSide)
+                        Points(4) = New PointF(x, y + Me.LongSide + Me.LongSide)
+                        Points(5) = New PointF(x - Me.ShortSide, y + Me.LongSide)
+
+                        Dim OffsetMousePosition As New PointF(Me.CurrentMousePosition.X - Me.PlayerMapXOffset, Me.CurrentMousePosition.Y - Me.PlayerMapYOffset)
+                    If InsidePolygon(Points, 6, OffsetMousePosition) Then
+                        Me.SelectedHexes = New List(Of Integer)
+                        Me.SelectedHexes.Add(HexCounter)
+                        Exit For
+                    End If
+                    Next
+        End Select
+    End Sub
+
     Private Sub Main_MouseMove(sender As Object, e As System.Windows.Forms.MouseEventArgs) Handles Me.MouseMove
         Me.CurrentMousePosition.X = e.X
         Me.CurrentMousePosition.Y = e.Y
@@ -81,32 +117,6 @@
     Private Function SetStartingYear() As Integer
         Return Me.rng.Next(1956, 1965)
     End Function
-
-    Public Sub PeaceTurnButtons_Show()
-        Me.btnTurnAction_Build.Visible = True
-        Me.btnTurnAction_War.Visible = True
-        Me.btnTurnAction_Spy.Visible = True
-    End Sub
-
-    Public Sub PeaceTurnButtons_Hide()
-        Me.btnTurnAction_Build.Visible = False
-        Me.btnTurnAction_War.Visible = False
-        Me.btnTurnAction_Spy.Visible = False
-    End Sub
-
-    Public Sub BaseTypeButtons_Show()
-        Me.btnBuildBase_ABM.Visible = True
-        Me.btnBuildBase_Bomber.Visible = True
-        Me.btnBuildBase_Missile.Visible = True
-        Me.btnBuildBase_Sub.Visible = True
-    End Sub
-
-    Public Sub BaseTypeButtons_Hide()
-        Me.btnBuildBase_ABM.Visible = False
-        Me.btnBuildBase_Bomber.Visible = False
-        Me.btnBuildBase_Missile.Visible = False
-        Me.btnBuildBase_Sub.Visible = False
-    End Sub
 
 #Region "Map Routines"
     Private Sub GenerateHexPoints()
@@ -323,7 +333,12 @@
         UpdatePlayerMap(PlayerMapG)
         UpdateAIMap(AIMapG)
 
-        HighlightHexUnderMouse(PlayerMapG)
+        Select Case Me.SelectionMode
+            Case SelectMode.Build
+                HighlightHexUnderMouse(PlayerMapG)
+                HighlightSelectedHexes(PlayerMapG)
+            Case SelectMode.None
+        End Select
 
         ' bitmaps are all done
         ' put them on the screen
@@ -364,6 +379,8 @@
                         TileCharacter = "B"
                     Case MapTile.MapTileType.MissileBase
                         TileCharacter = "M"
+                    Case MapTile.MapTileType.SubmarineBase
+                        TileCharacter = "S"
                     Case MapTile.MapTileType.City
                         TileCharacter = "C"
                 End Select
@@ -400,9 +417,34 @@
     End Sub
 
     Private Sub HighlightHexUnderMouse(ByRef PlayerGraphics As Graphics)
+
         ' Check Player Map
-        For HexCounter = 0 To 101
-            Dim UpperLeft As PointF = Me.HexPoints(HexCounter)
+        If Me.SelectionMode = SelectMode.Build Then
+            For HexCounter = 0 To 101
+                Dim UpperLeft As PointF = Me.HexPoints(HexCounter)
+                Dim x As Single = UpperLeft.X
+                Dim y As Single = UpperLeft.Y
+
+                Dim Points(5) As PointF
+                Points(0) = New PointF(x, y)
+                Points(1) = New PointF(x + Me.SideLength, y)
+                Points(2) = New PointF(x + Me.SideLength + Me.ShortSide, y + Me.LongSide)
+                Points(3) = New PointF(x + Me.SideLength, y + Me.LongSide + Me.LongSide)
+                Points(4) = New PointF(x, y + Me.LongSide + Me.LongSide)
+                Points(5) = New PointF(x - Me.ShortSide, y + Me.LongSide)
+
+                Dim OffsetMousePosition As New PointF(Me.CurrentMousePosition.X - Me.PlayerMapXOffset, Me.CurrentMousePosition.Y - Me.PlayerMapYOffset)
+                If InsidePolygon(Points, 6, OffsetMousePosition) Then
+                    PlayerGraphics.DrawPolygon(New Pen(Brushes.Yellow), Points)
+                    Exit For
+                End If
+            Next
+        End If
+    End Sub
+
+    Private Sub HighlightSelectedHexes(ByRef g As Graphics)
+        For Each SelectedHex As Integer In SelectedHexes
+            Dim UpperLeft As PointF = Me.HexPoints(SelectedHex)
             Dim x As Single = UpperLeft.X
             Dim y As Single = UpperLeft.Y
 
@@ -414,11 +456,7 @@
             Points(4) = New PointF(x, y + Me.LongSide + Me.LongSide)
             Points(5) = New PointF(x - Me.ShortSide, y + Me.LongSide)
 
-            Dim OffsetMousePosition As New PointF(Me.CurrentMousePosition.X - Me.PlayerMapXOffset, Me.CurrentMousePosition.Y - Me.PlayerMapYOffset)
-            If InsidePolygon(Points, 6, OffsetMousePosition) Then
-                PlayerGraphics.DrawPolygon(New Pen(Brushes.Yellow), Points)
-                Exit For
-            End If
+            g.DrawPolygon(New Pen(Brushes.Yellow, 3), Points)
         Next
     End Sub
 
@@ -458,6 +496,7 @@
         Me.btnTurnAction_Build.Visible = Visible
         Me.btnTurnAction_Spy.Visible = Visible
         Me.btnTurnAction_War.Visible = Visible
+        Application.DoEvents()
     End Sub
 
     Private Sub BuildBaseButtons_SetVisibility(Visible As Boolean)
@@ -465,8 +504,95 @@
         Me.btnBuildBase_Bomber.Visible = Visible
         Me.btnBuildBase_Missile.Visible = Visible
         Me.btnBuildBase_Sub.Visible = Visible
+        Application.DoEvents()
     End Sub
 
+    Private Sub ConfirmSelectionButton_SetVisibility(Visibility As Boolean)
+        Me.btnConfirmSelection.Visible = Visibility
+        Application.DoEvents()
+    End Sub
 
+    Private Function GetButtonAction() As String
+        Dim ReturnValue As String = String.Empty
+        Do
+            Application.DoEvents()
+            If Me.ButtonAction <> String.Empty Then
+                ReturnValue = Me.ButtonAction
+            End If
+        Loop Until ReturnValue <> String.Empty
+        Me.ButtonAction = String.Empty
+        Return ReturnValue
+    End Function
 
+    Private Sub TurnAction_Build()
+        BuildPlayerBase()
+
+    End Sub
+
+    Private Sub BuildPlayerBase()
+        BuildBaseButtons_SetVisibility(True)
+
+        Dim Action As String = GetButtonAction()
+        Dim BaseType As MapTile.MapTileType
+        Select Case Action.ToUpper
+            Case "MISSILE"
+                BaseType = MapTile.MapTileType.MissileBase
+            Case "BOMBER"
+                BaseType = MapTile.MapTileType.BomberBase
+            Case "ABM"
+                BaseType = MapTile.MapTileType.ABMBase
+            Case "SUB"
+                BaseType = MapTile.MapTileType.SubmarineBase
+        End Select
+
+        BuildBaseButtons_SetVisibility(False)
+
+        Me.SelectionMode = SelectMode.Build
+        Dim Location As Integer = SelectHex()
+
+        Me.PlayerMap(Location).TileType = BaseType
+        Me.Invalidate()
+    End Sub
+
+    Private Function SelectHex() As Integer
+        Me.SelectedHexes = New List(Of Integer)
+        Dim ReturnValue As Integer
+
+        Do
+            Application.DoEvents()
+        Loop Until Me.ButtonAction = "CONFIRMSELECTION"
+
+        ReturnValue = Me.SelectedHexes(0)
+
+        Me.SelectionMode = SelectMode.None
+        ConfirmSelectionButton_SetVisibility(False)
+
+        Return ReturnValue
+
+    End Function
+
+    Private Sub btnTurnAction_Build_Click(sender As System.Object, e As System.EventArgs) Handles btnTurnAction_Build.Click
+        TurnActionButtons_SetVisibility(False)
+        TurnAction_Build()
+    End Sub
+
+    Private Sub btnBuildBase_Missile_Click(sender As System.Object, e As System.EventArgs) Handles btnBuildBase_Missile.Click
+        Me.ButtonAction = "MISSILE"
+    End Sub
+
+    Private Sub btnBuildBase_Sub_Click(sender As System.Object, e As System.EventArgs) Handles btnBuildBase_Sub.Click
+        Me.ButtonAction = "SUB"
+    End Sub
+
+    Private Sub btnBuildBase_ABM_Click(sender As System.Object, e As System.EventArgs) Handles btnBuildBase_ABM.Click
+        Me.ButtonAction = "ABM"
+    End Sub
+
+    Private Sub btnBuildBase_Bomber_Click(sender As System.Object, e As System.EventArgs) Handles btnBuildBase_Bomber.Click
+        Me.ButtonAction = "BOMBER"
+    End Sub
+
+    Private Sub btnConfirmSelection_Click(sender As System.Object, e As System.EventArgs) Handles btnConfirmSelection.Click
+        Me.ButtonAction = "CONFIRMSELECTION"
+    End Sub
 End Class

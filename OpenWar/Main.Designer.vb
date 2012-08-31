@@ -29,6 +29,7 @@ Partial Class Main
         Me.btnBuildBase_Sub = New System.Windows.Forms.Button()
         Me.btnBuildBase_Missile = New System.Windows.Forms.Button()
         Me.btnBuildBase_Bomber = New System.Windows.Forms.Button()
+        Me.btnConfirmSelection = New System.Windows.Forms.Button()
         Me.SuspendLayout()
         '
         'btnTurnAction_Build
@@ -94,11 +95,21 @@ Partial Class Main
         Me.btnBuildBase_Bomber.Text = "Bomber"
         Me.btnBuildBase_Bomber.UseVisualStyleBackColor = True
         '
+        'btnConfirmSelection
+        '
+        Me.btnConfirmSelection.Location = New System.Drawing.Point(783, 257)
+        Me.btnConfirmSelection.Name = "btnConfirmSelection"
+        Me.btnConfirmSelection.Size = New System.Drawing.Size(123, 19)
+        Me.btnConfirmSelection.TabIndex = 8
+        Me.btnConfirmSelection.Text = "Confirm Selection"
+        Me.btnConfirmSelection.UseVisualStyleBackColor = True
+        '
         'Main
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
         Me.ClientSize = New System.Drawing.Size(955, 539)
+        Me.Controls.Add(Me.btnConfirmSelection)
         Me.Controls.Add(Me.btnBuildBase_Bomber)
         Me.Controls.Add(Me.btnBuildBase_ABM)
         Me.Controls.Add(Me.btnBuildBase_Sub)
@@ -118,4 +129,5 @@ Partial Class Main
     Friend WithEvents btnBuildBase_Sub As System.Windows.Forms.Button
     Friend WithEvents btnBuildBase_Missile As System.Windows.Forms.Button
     Friend WithEvents btnBuildBase_Bomber As System.Windows.Forms.Button
+    Friend WithEvents btnConfirmSelection As System.Windows.Forms.Button
 End Class
