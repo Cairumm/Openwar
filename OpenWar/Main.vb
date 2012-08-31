@@ -68,7 +68,8 @@
         GenerateHexPoints()
         SetupMaps()
 
-
+        TurnActionButtons_SetVisibility(True)
+        BuildBaseButtons_SetVisibility(False)
     End Sub
 
     Private Sub Main_MouseMove(sender As Object, e As System.Windows.Forms.MouseEventArgs) Handles Me.MouseMove
@@ -82,35 +83,30 @@
     End Function
 
     Public Sub PeaceTurnButtons_Show()
-        Me.btnBuildBase.Visible = True
-        Me.btnDeclareWar.Visible = True
-        Me.btnSpy.Visible = True
+        Me.btnTurnAction_Build.Visible = True
+        Me.btnTurnAction_War.Visible = True
+        Me.btnTurnAction_Spy.Visible = True
     End Sub
 
     Public Sub PeaceTurnButtons_Hide()
-        Me.btnBuildBase.Visible = False
-        Me.btnDeclareWar.Visible = False
-        Me.btnSpy.Visible = False
+        Me.btnTurnAction_Build.Visible = False
+        Me.btnTurnAction_War.Visible = False
+        Me.btnTurnAction_Spy.Visible = False
     End Sub
 
     Public Sub BaseTypeButtons_Show()
-        Me.btnBuildABMBase.Visible = True
-        Me.btnBuildBomberBase.Visible = True
-        Me.btnBuildMissileBase.Visible = True
-        Me.btnBuildSubBase.Visible = True
+        Me.btnBuildBase_ABM.Visible = True
+        Me.btnBuildBase_Bomber.Visible = True
+        Me.btnBuildBase_Missile.Visible = True
+        Me.btnBuildBase_Sub.Visible = True
     End Sub
 
     Public Sub BaseTypeButtons_Hide()
-        Me.btnBuildABMBase.Visible = False
-        Me.btnBuildBomberBase.Visible = False
-        Me.btnBuildMissileBase.Visible = False
-        Me.btnBuildSubBase.Visible = False
+        Me.btnBuildBase_ABM.Visible = False
+        Me.btnBuildBase_Bomber.Visible = False
+        Me.btnBuildBase_Missile.Visible = False
+        Me.btnBuildBase_Sub.Visible = False
     End Sub
-
-    Private Sub SetMessage(Message As String)
-        Me.txtMessage.Text = Message
-    End Sub
-
 
 #Region "Map Routines"
     Private Sub GenerateHexPoints()
@@ -457,5 +453,20 @@
         End If
     End Function
 #End Region
+
+    Private Sub TurnActionButtons_SetVisibility(Visible As Boolean)
+        Me.btnTurnAction_Build.Visible = Visible
+        Me.btnTurnAction_Spy.Visible = Visible
+        Me.btnTurnAction_War.Visible = Visible
+    End Sub
+
+    Private Sub BuildBaseButtons_SetVisibility(Visible As Boolean)
+        Me.btnBuildBase_ABM.Visible = Visible
+        Me.btnBuildBase_Bomber.Visible = Visible
+        Me.btnBuildBase_Missile.Visible = Visible
+        Me.btnBuildBase_Sub.Visible = Visible
+    End Sub
+
+
 
 End Class
