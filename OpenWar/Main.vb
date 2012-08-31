@@ -6,6 +6,8 @@
     Public Property PlayerCountryName As String
     Public Property AICountryName As String
 
+    Dim rng As Random
+
     ' This is updated by the mouse move event so we can highlight the hex that the mouse is over
     Private CurrentMousePosition As New PointF
 
@@ -41,6 +43,8 @@
         ' This is necessary to prevent flickering when the maps are redrawn
         Me.DoubleBuffered = True
 
+        Me.rng = New Random(System.DateTime.Now.Millisecond)
+
         ' Initialize game variables
         Me.SideLength = 20
         Me.ShortSide = Convert.ToSingle(System.Math.Sin(30 * System.Math.PI / 180) * Me.SideLength)
@@ -62,6 +66,8 @@
 
         ' Build and store the list of hex coordinates
         GenerateHexPoints()
+        SetupMaps()
+
 
     End Sub
 
@@ -72,8 +78,7 @@
     End Sub
 
     Private Function SetStartingYear() As Integer
-        Dim rng As New Random(System.DateTime.Now.Millisecond)
-        Return rng.Next(1956, 1965)
+        Return Me.rng.Next(1956, 1965)
     End Function
 
     Public Sub PeaceTurnButtons_Show()
@@ -168,10 +173,9 @@
 
     Private Sub AddStartingMapItems(Map As List(Of MapTile))
         ' Put cities on the map at random locations
-        Dim rng As New Random(System.DateTime.Now.Millisecond)
         Dim CityCount As Integer = 0
         Do
-            Dim CityTile As MapTile = Map(rng.Next(0, Map.Count - 1))
+            Dim CityTile As MapTile = Map(Me.rng.Next(0, Map.Count - 1))
             If CityTile.TileType <> MapTile.MapTileType.City Then
                 CityTile.TileType = MapTile.MapTileType.City
                 CityCount += 1
@@ -181,7 +185,7 @@
         ' Add a missile base to the map
         Dim BaseCount As Integer = 0
         Do
-            Dim MissileBaseTile As MapTile = Map(rng.Next(0, Map.Count - 1))
+            Dim MissileBaseTile As MapTile = Map(Me.rng.Next(0, Map.Count - 1))
             If MissileBaseTile.TileType = MapTile.MapTileType.Empty Then
                 MissileBaseTile.TileType = MapTile.MapTileType.MissileBase
                 BaseCount += 1
@@ -190,7 +194,7 @@
 
         BaseCount = 0
         Do
-            Dim BomberBaseTile As MapTile = Map(rng.Next(0, Map.Count - 1))
+            Dim BomberBaseTile As MapTile = Map(Me.rng.Next(0, Map.Count - 1))
             If BomberBaseTile.TileType = MapTile.MapTileType.Empty Then
                 BomberBaseTile.TileType = MapTile.MapTileType.BomberBase
                 BaseCount += 1
@@ -320,7 +324,9 @@
         AIMapG.FillRectangle(New SolidBrush(Me.MapBackgroundColor), 0, 0, Me.MapWidth, Me.MapHeight)
 
         DrawEmptyHexMaps(PlayerMapG, AIMapG)
-        DrawPlayerMap(PlayerMapG)
+        UpdatePlayerMap(PlayerMapG)
+        UpdateAIMap(AIMapG)
+
         HighlightHexUnderMouse(PlayerMapG)
 
         ' bitmaps are all done
@@ -353,7 +359,7 @@
 
     End Sub
 
-    Private Sub DrawPlayerMap(ByRef PlayerGraphics As Graphics)
+    Private Sub UpdatePlayerMap(ByRef PlayerGraphics As Graphics)
         For TileCounter = 0 To 101
             If PlayerMap(TileCounter).TileType <> MapTile.MapTileType.Empty Then
                 Dim TileCharacter As String = String.Empty
@@ -371,6 +377,28 @@
                 Dim Location As New PointF(HexPoints(TileCounter).X + XOffset, HexPoints(TileCounter).Y + YOffset)
 
                 PlayerGraphics.DrawString(TileCharacter, New System.Drawing.Font("Courier New", 10), Brushes.Green, Location)
+            End If
+        Next
+    End Sub
+
+    Private Sub UpdateAIMap(AIGraphics As Graphics)
+        For TileCounter = 0 To 101
+            If AIMap(TileCounter).TileType <> MapTile.MapTileType.Empty Then
+                Dim TileCharacter As String = String.Empty
+                Select Case AIMap(TileCounter).TileType
+                    Case MapTile.MapTileType.BomberBase
+                        TileCharacter = "B"
+                    Case MapTile.MapTileType.MissileBase
+                        TileCharacter = "M"
+                    Case MapTile.MapTileType.City
+                        TileCharacter = "C"
+                End Select
+
+                Dim XOffset As Single = 4
+                Dim YOffset As Single = 4
+                Dim Location As New PointF(HexPoints(TileCounter).X + XOffset, HexPoints(TileCounter).Y + YOffset)
+
+                AIGraphics.DrawString(TileCharacter, New System.Drawing.Font("Courier New", 10), Brushes.Green, Location)
             End If
         Next
     End Sub
