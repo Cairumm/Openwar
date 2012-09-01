@@ -68,7 +68,7 @@
         Me.MapLineColor = Color.Green
         Me.PlayerMapXOffset = 10
         Me.PlayerMapYOffset = 10
-
+        MsgBox(MapHeight & "," & MapWidth)
         Me.StartingCities = 8
         Me.GameYear = SetStartingYear()
         Me.GameOver = False
@@ -78,33 +78,34 @@
         GenerateHexPoints()
         SetupMaps()
 
-        TurnActionButtons_SetVisibility(True)
-        BuildBaseButtons_SetVisibility(False)
+        SetVisibility_TurnActionButtons(True)
+        SetVisibility_BuildBaseButtons(False)
+        SetVisibility_ConfirmSelectionButton(False)
     End Sub
 
     Private Sub Main_MouseClick(sender As Object, e As System.Windows.Forms.MouseEventArgs) Handles Me.MouseClick
         Select Case Me.SelectionMode
             Case SelectMode.Build
-                    For HexCounter = 0 To 101
-                        Dim UpperLeft As PointF = Me.HexPoints(HexCounter)
-                        Dim x As Single = UpperLeft.X
-                        Dim y As Single = UpperLeft.Y
+                For HexCounter = 0 To 101
+                    Dim UpperLeft As PointF = Me.HexPoints(HexCounter)
+                    Dim x As Single = UpperLeft.X
+                    Dim y As Single = UpperLeft.Y
 
-                        Dim Points(5) As PointF
-                        Points(0) = New PointF(x, y)
-                        Points(1) = New PointF(x + Me.SideLength, y)
-                        Points(2) = New PointF(x + Me.SideLength + Me.ShortSide, y + Me.LongSide)
-                        Points(3) = New PointF(x + Me.SideLength, y + Me.LongSide + Me.LongSide)
-                        Points(4) = New PointF(x, y + Me.LongSide + Me.LongSide)
-                        Points(5) = New PointF(x - Me.ShortSide, y + Me.LongSide)
+                    Dim Points(5) As PointF
+                    Points(0) = New PointF(x, y)
+                    Points(1) = New PointF(x + Me.SideLength, y)
+                    Points(2) = New PointF(x + Me.SideLength + Me.ShortSide, y + Me.LongSide)
+                    Points(3) = New PointF(x + Me.SideLength, y + Me.LongSide + Me.LongSide)
+                    Points(4) = New PointF(x, y + Me.LongSide + Me.LongSide)
+                    Points(5) = New PointF(x - Me.ShortSide, y + Me.LongSide)
 
-                        Dim OffsetMousePosition As New PointF(Me.CurrentMousePosition.X - Me.PlayerMapXOffset, Me.CurrentMousePosition.Y - Me.PlayerMapYOffset)
+                    Dim OffsetMousePosition As New PointF(Me.CurrentMousePosition.X - Me.PlayerMapXOffset, Me.CurrentMousePosition.Y - Me.PlayerMapYOffset)
                     If InsidePolygon(Points, 6, OffsetMousePosition) Then
                         Me.SelectedHexes = New List(Of Integer)
                         Me.SelectedHexes.Add(HexCounter)
                         Exit For
                     End If
-                    Next
+                Next
         End Select
     End Sub
 
@@ -492,14 +493,14 @@
     End Function
 #End Region
 
-    Private Sub TurnActionButtons_SetVisibility(Visible As Boolean)
+    Private Sub SetVisibility_TurnActionButtons(Visible As Boolean)
         Me.btnTurnAction_Build.Visible = Visible
         Me.btnTurnAction_Spy.Visible = Visible
         Me.btnTurnAction_War.Visible = Visible
         Application.DoEvents()
     End Sub
 
-    Private Sub BuildBaseButtons_SetVisibility(Visible As Boolean)
+    Private Sub SetVisibility_BuildBaseButtons(Visible As Boolean)
         Me.btnBuildBase_ABM.Visible = Visible
         Me.btnBuildBase_Bomber.Visible = Visible
         Me.btnBuildBase_Missile.Visible = Visible
@@ -507,7 +508,7 @@
         Application.DoEvents()
     End Sub
 
-    Private Sub ConfirmSelectionButton_SetVisibility(Visibility As Boolean)
+    Private Sub SetVisibility_ConfirmSelectionButton(Visibility As Boolean)
         Me.btnConfirmSelection.Visible = Visibility
         Application.DoEvents()
     End Sub
@@ -530,7 +531,7 @@
     End Sub
 
     Private Sub BuildPlayerBase()
-        BuildBaseButtons_SetVisibility(True)
+        SetVisibility_BuildBaseButtons(True)
 
         Dim Action As String = GetButtonAction()
         Dim BaseType As MapTile.MapTileType
@@ -545,7 +546,7 @@
                 BaseType = MapTile.MapTileType.SubmarineBase
         End Select
 
-        BuildBaseButtons_SetVisibility(False)
+        SetVisibility_BuildBaseButtons(False)
 
         Me.SelectionMode = SelectMode.Build
         Dim Location As Integer = SelectHex()
@@ -565,14 +566,14 @@
         ReturnValue = Me.SelectedHexes(0)
 
         Me.SelectionMode = SelectMode.None
-        ConfirmSelectionButton_SetVisibility(False)
+        SetVisibility_ConfirmSelectionButton(False)
 
         Return ReturnValue
 
     End Function
 
     Private Sub btnTurnAction_Build_Click(sender As System.Object, e As System.EventArgs) Handles btnTurnAction_Build.Click
-        TurnActionButtons_SetVisibility(False)
+        SetVisibility_TurnActionButtons(False)
         TurnAction_Build()
     End Sub
 
