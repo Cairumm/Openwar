@@ -6,13 +6,16 @@
     Public Property PlayerCountryName As String
     Public Property AICountryName As String
 
+    ' A class-level random number generator
     Private rng As Random
 
+    ' When a button is clicked, this variable holds a string that indicates what button was clicked
     Private ButtonAction As String = String.Empty
 
     ' This is updated by the mouse move event so we can highlight the hex that the mouse is over
     Private CurrentMousePosition As New PointF
 
+    ' The "selection mode" of the form controls how the mouse and graphics behave
     Private Enum SelectMode
         None
         Build
@@ -20,6 +23,7 @@
     End Enum
     Private SelectionMode As SelectMode
 
+    ' The collection that holds the currently-selected hex(es)
     Private SelectedHexes As New List(Of Integer)
 
 #Region "Hex Map Variables"
@@ -50,6 +54,9 @@
 
     Private Sub Main_Load(sender As System.Object, e As System.EventArgs) Handles MyBase.Load
 
+        Me.RectangleShape1.Hide()
+        Me.RectangleShape2.Hide()
+
         ' This is necessary to prevent flickering when the maps are redrawn
         Me.DoubleBuffered = True
 
@@ -68,7 +75,6 @@
         Me.MapLineColor = Color.Green
         Me.PlayerMapXOffset = 10
         Me.PlayerMapYOffset = 10
-        MsgBox(MapHeight & "," & MapWidth)
         Me.StartingCities = 8
         Me.GameYear = SetStartingYear()
         Me.GameOver = False
@@ -81,7 +87,77 @@
         SetVisibility_TurnActionButtons(True)
         SetVisibility_BuildBaseButtons(False)
         SetVisibility_ConfirmSelectionButton(False)
+
+        Me.SetMessage("What will you do this turn?")
     End Sub
+
+    ' This method waits for one of the game buttons to be clicked.
+    Private Function GetButtonAction() As String
+        Dim ReturnValue As String = String.Empty
+        Do
+            Application.DoEvents()
+            If Me.ButtonAction <> String.Empty Then
+                ReturnValue = Me.ButtonAction
+            End If
+        Loop Until ReturnValue <> String.Empty
+        Me.ButtonAction = String.Empty
+        Return ReturnValue
+    End Function
+
+    Private Sub TurnAction_Build()
+        BuildPlayerBase()
+        BuildPlayerBase()
+    End Sub
+
+    Private Sub BuildPlayerBase()
+        SetVisibility_BuildBaseButtons(True)
+        SetMessage("What kind of base do you want to build?")
+
+        Dim Action As String = GetButtonAction()
+        Dim BaseType As MapTile.MapTileType
+        Select Case Action.ToUpper
+            Case "MISSILE"
+                BaseType = MapTile.MapTileType.MissileBase
+            Case "BOMBER"
+                BaseType = MapTile.MapTileType.BomberBase
+            Case "ABM"
+                BaseType = MapTile.MapTileType.ABMBase
+            Case "SUB"
+                BaseType = MapTile.MapTileType.SubmarineBase
+        End Select
+
+        SetVisibility_BuildBaseButtons(False)
+        SetVisibility_ConfirmSelectionButton(True)
+
+        Me.SelectionMode = SelectMode.Build
+        SetMessage("Select a location for your base and click ""Confirm""")
+        Dim Location As Integer = SelectHex()
+
+        Me.PlayerMap(Location).TileType = BaseType
+        Me.Invalidate()
+
+        Me.SelectionMode = SelectMode.None
+    End Sub
+
+    Private Function SelectHex() As Integer
+        Me.SelectedHexes = New List(Of Integer)
+        Dim ReturnValue As Integer
+
+        Me.btnConfirmSelection.Enabled = False
+        Do
+            Application.DoEvents()
+        Loop Until Me.ButtonAction = "CONFIRMSELECTION"
+
+        ReturnValue = Me.SelectedHexes(0)
+
+        Me.SelectionMode = SelectMode.None
+        SetVisibility_ConfirmSelectionButton(False)
+        SetMessage("")
+
+        Me.ButtonAction = String.Empty
+        Return ReturnValue
+
+    End Function
 
     Private Sub Main_MouseClick(sender As Object, e As System.Windows.Forms.MouseEventArgs) Handles Me.MouseClick
         Select Case Me.SelectionMode
@@ -101,8 +177,14 @@
 
                     Dim OffsetMousePosition As New PointF(Me.CurrentMousePosition.X - Me.PlayerMapXOffset, Me.CurrentMousePosition.Y - Me.PlayerMapYOffset)
                     If InsidePolygon(Points, 6, OffsetMousePosition) Then
-                        Me.SelectedHexes = New List(Of Integer)
-                        Me.SelectedHexes.Add(HexCounter)
+                        If Me.SelectedHexes.Count = 0 Then
+                            Me.SelectedHexes = New List(Of Integer)
+                            Me.SelectedHexes.Add(HexCounter)
+                            Me.btnConfirmSelection.Enabled = True
+                        Else
+                            Me.SelectedHexes = New List(Of Integer)
+                            Me.btnConfirmSelection.Enabled = False
+                        End If
                         Exit For
                     End If
                 Next
@@ -112,6 +194,7 @@
     Private Sub Main_MouseMove(sender As Object, e As System.Windows.Forms.MouseEventArgs) Handles Me.MouseMove
         Me.CurrentMousePosition.X = e.X
         Me.CurrentMousePosition.Y = e.Y
+        Debug.WriteLine(e.X & "," & e.Y)
         Me.Invalidate()
     End Sub
 
@@ -350,6 +433,11 @@
 
     Private Sub DrawEmptyHexMaps(ByRef PlayerGraphics As Graphics, ByRef AIGraphics As Graphics)
 
+        PlayerGraphics.DrawString(Me.PlayerCountryName, New Font("Courier New", 12), New SolidBrush(Color.Green), New PointF(1, 1))
+        AIGraphics.DrawString(Me.AICountryName, New Font("Courier New", 12), New SolidBrush(Color.Green), New PointF(1, 1))
+
+
+
         ' iterate through the list of pre-generated coordinates and draw the hexes in
         ' both bitmaps
         For Each UpperLeft As PointF In Me.HexPoints
@@ -420,7 +508,6 @@
     Private Sub HighlightHexUnderMouse(ByRef PlayerGraphics As Graphics)
 
         ' Check Player Map
-        If Me.SelectionMode = SelectMode.Build Then
             For HexCounter = 0 To 101
                 Dim UpperLeft As PointF = Me.HexPoints(HexCounter)
                 Dim x As Single = UpperLeft.X
@@ -440,7 +527,6 @@
                     Exit For
                 End If
             Next
-        End If
     End Sub
 
     Private Sub HighlightSelectedHexes(ByRef g As Graphics)
@@ -513,64 +599,10 @@
         Application.DoEvents()
     End Sub
 
-    Private Function GetButtonAction() As String
-        Dim ReturnValue As String = String.Empty
-        Do
-            Application.DoEvents()
-            If Me.ButtonAction <> String.Empty Then
-                ReturnValue = Me.ButtonAction
-            End If
-        Loop Until ReturnValue <> String.Empty
-        Me.ButtonAction = String.Empty
-        Return ReturnValue
-    End Function
-
-    Private Sub TurnAction_Build()
-        BuildPlayerBase()
-
+    Private Sub SetMessage(Message As String)
+        Me.lblMessage.Text = Message
+        Application.DoEvents()
     End Sub
-
-    Private Sub BuildPlayerBase()
-        SetVisibility_BuildBaseButtons(True)
-
-        Dim Action As String = GetButtonAction()
-        Dim BaseType As MapTile.MapTileType
-        Select Case Action.ToUpper
-            Case "MISSILE"
-                BaseType = MapTile.MapTileType.MissileBase
-            Case "BOMBER"
-                BaseType = MapTile.MapTileType.BomberBase
-            Case "ABM"
-                BaseType = MapTile.MapTileType.ABMBase
-            Case "SUB"
-                BaseType = MapTile.MapTileType.SubmarineBase
-        End Select
-
-        SetVisibility_BuildBaseButtons(False)
-
-        Me.SelectionMode = SelectMode.Build
-        Dim Location As Integer = SelectHex()
-
-        Me.PlayerMap(Location).TileType = BaseType
-        Me.Invalidate()
-    End Sub
-
-    Private Function SelectHex() As Integer
-        Me.SelectedHexes = New List(Of Integer)
-        Dim ReturnValue As Integer
-
-        Do
-            Application.DoEvents()
-        Loop Until Me.ButtonAction = "CONFIRMSELECTION"
-
-        ReturnValue = Me.SelectedHexes(0)
-
-        Me.SelectionMode = SelectMode.None
-        SetVisibility_ConfirmSelectionButton(False)
-
-        Return ReturnValue
-
-    End Function
 
     Private Sub btnTurnAction_Build_Click(sender As System.Object, e As System.EventArgs) Handles btnTurnAction_Build.Click
         SetVisibility_TurnActionButtons(False)
