@@ -91,7 +91,6 @@
         Me.SetMessage("What will you do this turn?")
     End Sub
 
-    ' This method waits for one of the game buttons to be clicked.
     Private Function GetButtonAction() As String
         Dim ReturnValue As String = String.Empty
         Do
@@ -105,13 +104,14 @@
     End Function
 
     Private Sub TurnAction_Build()
+        SetMessage("Select base type for first base")
         BuildPlayerBase()
+        SetMessage("Select base type for second base")
         BuildPlayerBase()
     End Sub
 
     Private Sub BuildPlayerBase()
         SetVisibility_BuildBaseButtons(True)
-        SetMessage("What kind of base do you want to build?")
 
         Dim Action As String = GetButtonAction()
         Dim BaseType As MapTile.MapTileType
@@ -158,45 +158,6 @@
         Return ReturnValue
 
     End Function
-
-    Private Sub Main_MouseClick(sender As Object, e As System.Windows.Forms.MouseEventArgs) Handles Me.MouseClick
-        Select Case Me.SelectionMode
-            Case SelectMode.Build
-                For HexCounter = 0 To 101
-                    Dim UpperLeft As PointF = Me.HexPoints(HexCounter)
-                    Dim x As Single = UpperLeft.X
-                    Dim y As Single = UpperLeft.Y
-
-                    Dim Points(5) As PointF
-                    Points(0) = New PointF(x, y)
-                    Points(1) = New PointF(x + Me.SideLength, y)
-                    Points(2) = New PointF(x + Me.SideLength + Me.ShortSide, y + Me.LongSide)
-                    Points(3) = New PointF(x + Me.SideLength, y + Me.LongSide + Me.LongSide)
-                    Points(4) = New PointF(x, y + Me.LongSide + Me.LongSide)
-                    Points(5) = New PointF(x - Me.ShortSide, y + Me.LongSide)
-
-                    Dim OffsetMousePosition As New PointF(Me.CurrentMousePosition.X - Me.PlayerMapXOffset, Me.CurrentMousePosition.Y - Me.PlayerMapYOffset)
-                    If InsidePolygon(Points, 6, OffsetMousePosition) Then
-                        If Me.SelectedHexes.Count = 0 Then
-                            Me.SelectedHexes = New List(Of Integer)
-                            Me.SelectedHexes.Add(HexCounter)
-                            Me.btnConfirmSelection.Enabled = True
-                        Else
-                            Me.SelectedHexes = New List(Of Integer)
-                            Me.btnConfirmSelection.Enabled = False
-                        End If
-                        Exit For
-                    End If
-                Next
-        End Select
-    End Sub
-
-    Private Sub Main_MouseMove(sender As Object, e As System.Windows.Forms.MouseEventArgs) Handles Me.MouseMove
-        Me.CurrentMousePosition.X = e.X
-        Me.CurrentMousePosition.Y = e.Y
-        Debug.WriteLine(e.X & "," & e.Y)
-        Me.Invalidate()
-    End Sub
 
     Private Function SetStartingYear() As Integer
         Return Me.rng.Next(1956, 1965)
@@ -579,6 +540,7 @@
     End Function
 #End Region
 
+#Region "UI Management"
     Private Sub SetVisibility_TurnActionButtons(Visible As Boolean)
         Me.btnTurnAction_Build.Visible = Visible
         Me.btnTurnAction_Spy.Visible = Visible
@@ -603,7 +565,9 @@
         Me.lblMessage.Text = Message
         Application.DoEvents()
     End Sub
+#End Region
 
+#Region "Event Handlers"
     Private Sub btnTurnAction_Build_Click(sender As System.Object, e As System.EventArgs) Handles btnTurnAction_Build.Click
         SetVisibility_TurnActionButtons(False)
         TurnAction_Build()
@@ -628,4 +592,46 @@
     Private Sub btnConfirmSelection_Click(sender As System.Object, e As System.EventArgs) Handles btnConfirmSelection.Click
         Me.ButtonAction = "CONFIRMSELECTION"
     End Sub
+
+    Private Sub Main_MouseClick(sender As Object, e As System.Windows.Forms.MouseEventArgs) Handles Me.MouseClick
+        Select Case Me.SelectionMode
+            Case SelectMode.Build
+                For HexCounter = 0 To 101
+                    Dim UpperLeft As PointF = Me.HexPoints(HexCounter)
+                    Dim x As Single = UpperLeft.X
+                    Dim y As Single = UpperLeft.Y
+
+                    Dim Points(5) As PointF
+                    Points(0) = New PointF(x, y)
+                    Points(1) = New PointF(x + Me.SideLength, y)
+                    Points(2) = New PointF(x + Me.SideLength + Me.ShortSide, y + Me.LongSide)
+                    Points(3) = New PointF(x + Me.SideLength, y + Me.LongSide + Me.LongSide)
+                    Points(4) = New PointF(x, y + Me.LongSide + Me.LongSide)
+                    Points(5) = New PointF(x - Me.ShortSide, y + Me.LongSide)
+
+                    Dim OffsetMousePosition As New PointF(Me.CurrentMousePosition.X - Me.PlayerMapXOffset, Me.CurrentMousePosition.Y - Me.PlayerMapYOffset)
+                    If InsidePolygon(Points, 6, OffsetMousePosition) Then
+                        If Me.SelectedHexes.Count = 0 Then
+                            Me.SelectedHexes = New List(Of Integer)
+                            Me.SelectedHexes.Add(HexCounter)
+                            Me.btnConfirmSelection.Enabled = True
+                        Else
+                            Me.SelectedHexes = New List(Of Integer)
+                            Me.btnConfirmSelection.Enabled = False
+                        End If
+                        Exit For
+                    End If
+                Next
+        End Select
+    End Sub
+
+    Private Sub Main_MouseMove(sender As Object, e As System.Windows.Forms.MouseEventArgs) Handles Me.MouseMove
+        Me.CurrentMousePosition.X = e.X
+        Me.CurrentMousePosition.Y = e.Y
+        Debug.WriteLine(e.X & "," & e.Y)
+        Me.Invalidate()
+    End Sub
+#End Region
+
+
 End Class
