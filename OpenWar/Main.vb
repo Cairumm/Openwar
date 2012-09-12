@@ -1,19 +1,37 @@
 ﻿Public Class Main
 
-    Private PlayerMap As New List(Of MapTile)
-    Private AIMap As New List(Of MapTile)
+#Region "Class-level Variables"
 
+    ' These are public because they are assigned by another form
     Public Property PlayerCountryName As String
     Public Property AICountryName As String
 
-    ' A class-level random number generator
-    Private rng As Random
+    Private PlayerMap As New List(Of MapTile)       ' The player map
+    Private AIMap As New List(Of MapTile)           ' the AI map
+    Private rng As Random                           ' Random number generator used throughout the game
+    Private ButtonAction As String = String.Empty   ' the button that was last clicked
+    Private CurrentMousePosition As New PointF      ' updated by the MouseMove() event
+    Private AtWar As Boolean                        ' controls whether the "peace" methods or the "war" methods are called
+    Private GameYear As Integer                     ' the current year in game time
+    Private StartingCities As Integer               ' The number of cities each player starts with
+    Private PlayerSpied As Boolean                  ' Did the player spy this turn?
+    Private AISpied As Boolean                      ' Did the AI spy this turn?
 
-    ' When a button is clicked, this variable holds a string that indicates what button was clicked
-    Private ButtonAction As String = String.Empty
-
-    ' This is updated by the mouse move event so we can highlight the hex that the mouse is over
-    Private CurrentMousePosition As New PointF
+    ' These variables are used in map drawing and calculations
+    Private HexPoints As New List(Of PointF)    'The coordinates of the upper-left of each hex on the hex maps
+    Dim SideLength As Single            ' The length of one side of one hex - Almost all the other map values derive from this
+    Dim ShortSide As Single             ' The short side of the triangle formed by the hex corners 
+    Dim LongSide As Single              ' The long side of the hex triangle formed by the hex corners
+    Dim HexWidth As Single              ' The width of a single hex
+    Dim HexHeight As Single             ' The height of a single hex
+    Dim MapWidth As Integer             ' The total width of the map
+    Dim MapHeight As Integer            ' The total height of the map
+    Dim MapPadding As Integer           ' How much space is around the map
+    Dim MapBackgroundColor As Color     ' Map background color
+    Dim MapLineColor As Color           ' The color of the map lines
+    Dim PlayerMapXOffset As Integer     ' How far the map is from the corner of the form
+    Dim PlayerMapYOffset As Integer     ' How far the map is from the corner of the form
+    Private SelectedHexes As New List(Of Integer)   ' The currently-selected hex(es)
 
     ' The "selection mode" of the form controls how the mouse and graphics behave
     Private Enum SelectMode
@@ -23,34 +41,6 @@
     End Enum
     Private SelectionMode As SelectMode
 
-    ' The collection that holds the currently-selected hex(es)
-    Private SelectedHexes As New List(Of Integer)
-
-    Private AtWar As Boolean
-
-#Region "Hex Map Variables"
-    ' This is a list of the coordinates of the upper-left-hand coordinates of each hex
-    ' Since they are the same for both the human and AI player, we only need to maintain one list
-    Private HexPoints As New List(Of PointF)
-
-    ' variables used in map calculations and drawing
-    Dim SideLength As Single
-    Dim ShortSide As Single
-    Dim LongSide As Single
-    Dim HexWidth As Single
-    Dim HexHeight As Single
-    Dim MapWidth As Integer
-    Dim MapHeight As Integer
-    Dim MapPadding As Integer
-    Dim MapBackgroundColor As Color
-    Dim MapLineColor As Color
-    Dim PlayerMapXOffset As Integer
-    Dim PlayerMapYOffset As Integer
-
-    ' game control variables
-    Dim GameYear As Integer
-    Dim GameOver As Boolean
-    Dim StartingCities As Integer
 #End Region
 
     Private Sub Main_Load(sender As System.Object, e As System.EventArgs) Handles MyBase.Load
@@ -78,7 +68,6 @@
         Me.PlayerMapYOffset = 10
         Me.StartingCities = 8
         Me.GameYear = SetStartingYear()
-        Me.GameOver = False
         Me.AtWar = False
 
         ' Build and store the list of hex coordinates
@@ -86,6 +75,16 @@
         SetupMaps()
 
         TurnActivities_Start()
+    End Sub
+
+    Private Sub TurnActivities_Start()
+        SetVisibility_TurnActionButtons(True)
+        SetVisibility_BuildBaseButtons(False)
+        SetVisibility_ConfirmSelectionButton(False)
+
+        Me.PlayerSpied = False
+
+        Me.SetMessage("What will you do this turn?")
     End Sub
 
     Private Function GetButtonAction() As String
@@ -100,16 +99,21 @@
         Return ReturnValue
     End Function
 
-    Private Sub TurnAction_Build()
+    Private Sub Player_TurnAction_Build()
         SetMessage("Select base type for first base")
-        BuildPlayerBase()
+        Player_BuildBase()
         SetMessage("Select base type for second base")
-        BuildPlayerBase()
-
-        AITurn()
+        Player_BuildBase()
+        AI_TurnStart()
     End Sub
 
-    Private Sub BuildPlayerBase()
+    Private Sub Player_TurnAction_Spy()
+        SetMessage("Select base type for base")
+        Player_BuildBase()
+        Me.PlayerSpied = True
+    End Sub
+
+    Private Sub Player_BuildBase()
         SetVisibility_BuildBaseButtons(True)
 
         Dim Action As String = GetButtonAction()
@@ -162,13 +166,6 @@
         Return Me.rng.Next(1956, 1965)
     End Function
 
-    Private Sub TurnActivities_Start()
-        SetVisibility_TurnActionButtons(True)
-        SetVisibility_BuildBaseButtons(False)
-        SetVisibility_ConfirmSelectionButton(False)
-
-        Me.SetMessage("What will you do this turn?")
-    End Sub
 
     Private Sub TurnActivities_End()
         NuclearAccidentCheck()
@@ -182,33 +179,43 @@
         TurnActivities_Start()
     End Sub
 
-    Private Sub AITurn()
+    Private Sub AI_TurnStart()
+        Me.AISpied = False
         If AtWar Then
-            AITurn_War()
+            AI_Turn_War()
         Else
-            If AIWarCheck() Then
-                AITurn_War()
+            If AI_WarCheck() Then
+                AI_Turn_War()
             Else
-                AITurn_Peace()
+                AI_Turn_Peace()
             End If
         End If
 
         TurnActivities_End()
     End Sub
 
-    Private Sub AITurn_Peace()
+    Private Sub AI_Turn_Peace()
         ' The AI has two options: Build or Spy
-        ' Eventually this will be determined by a die roll of some sort
-        Dim AIAction As String = "BUILD"
+        ' If D10=1 then spy, otherwise build
+        If rng.Next(1, 10) > 1 Then
+        Else
+            AI_BuildBase()
 
-        Select Case AIAction
-            Case "BUILD"
-                AI_BuildBase()
-                AI_BuildBase()
-            Case "SPY"
-                ' later
-        End Select
+        End If
+
     End Sub
+
+
+    Private Sub AI_TurnAction_Build()
+        AI_BuildBase()
+        AI_BuildBase()
+    End Sub
+
+    Private Sub AI_TurnAction_Spy()
+        AI_BuildBase()
+        Me.AISpied = True
+    End Sub
+
 
     Private Sub AI_BuildBase()
 
@@ -254,13 +261,11 @@
 
     End Sub
 
-
-
-    Private Sub AITurn_War()
+    Private Sub AI_Turn_War()
 
     End Sub
 
-    Private Function AIWarCheck() As Boolean
+    Private Function AI_WarCheck() As Boolean
         '
         ' TODO: Implement logic to check if AI should declare war
         '
@@ -297,6 +302,15 @@
 
             AccidentLocation.IsNuked = True
         End If
+    End Sub
+
+    Public Sub RevealTiles(Map As List(Of MapTile), Spy As Boolean)
+        ' On any given turn, a certain number of tiles are revealed to the other player
+        ' Spying means that more tiles are revealed
+        Dim TilesToReveal As Integer = If(Spy, 36, 12)
+        For counter = 1 To TilesToReveal
+            Map(rng.Next(0, 101)).IsVisibleToOpponent = True
+        Next
     End Sub
 
 
@@ -517,8 +531,8 @@
         AIMapG.FillRectangle(New SolidBrush(Me.MapBackgroundColor), 0, 0, Me.MapWidth, Me.MapHeight)
 
         DrawEmptyHexMaps(PlayerMapG, AIMapG)
-        UpdatePlayerMap(PlayerMapG)
-        UpdateAIMap(AIMapG)
+        Player_UpdateMap(PlayerMapG)
+        AI_UpdateMap(AIMapG)
 
         Select Case Me.SelectionMode
             Case SelectMode.Build
@@ -562,7 +576,7 @@
 
     End Sub
 
-    Private Sub UpdatePlayerMap(ByRef PlayerGraphics As Graphics)
+    Private Sub Player_UpdateMap(ByRef PlayerGraphics As Graphics)
         For TileCounter = 0 To 101
             If PlayerMap(TileCounter).TileType <> MapTile.MapTileType.Empty Then
                 Dim TileCharacter As String = String.Empty
@@ -586,7 +600,7 @@
         Next
     End Sub
 
-    Private Sub UpdateAIMap(AIGraphics As Graphics)
+    Private Sub AI_UpdateMap(AIGraphics As Graphics)
         For TileCounter = 0 To 101
             If AIMap(TileCounter).TileType <> MapTile.MapTileType.Empty Then
                 Dim TileCharacter As String = String.Empty
@@ -611,25 +625,25 @@
     Private Sub HighlightHexUnderMouse(ByRef PlayerGraphics As Graphics)
 
         ' Check Player Map
-            For HexCounter = 0 To 101
-                Dim UpperLeft As PointF = Me.HexPoints(HexCounter)
-                Dim x As Single = UpperLeft.X
-                Dim y As Single = UpperLeft.Y
+        For HexCounter = 0 To 101
+            Dim UpperLeft As PointF = Me.HexPoints(HexCounter)
+            Dim x As Single = UpperLeft.X
+            Dim y As Single = UpperLeft.Y
 
-                Dim Points(5) As PointF
-                Points(0) = New PointF(x, y)
-                Points(1) = New PointF(x + Me.SideLength, y)
-                Points(2) = New PointF(x + Me.SideLength + Me.ShortSide, y + Me.LongSide)
-                Points(3) = New PointF(x + Me.SideLength, y + Me.LongSide + Me.LongSide)
-                Points(4) = New PointF(x, y + Me.LongSide + Me.LongSide)
-                Points(5) = New PointF(x - Me.ShortSide, y + Me.LongSide)
+            Dim Points(5) As PointF
+            Points(0) = New PointF(x, y)
+            Points(1) = New PointF(x + Me.SideLength, y)
+            Points(2) = New PointF(x + Me.SideLength + Me.ShortSide, y + Me.LongSide)
+            Points(3) = New PointF(x + Me.SideLength, y + Me.LongSide + Me.LongSide)
+            Points(4) = New PointF(x, y + Me.LongSide + Me.LongSide)
+            Points(5) = New PointF(x - Me.ShortSide, y + Me.LongSide)
 
-                Dim OffsetMousePosition As New PointF(Me.CurrentMousePosition.X - Me.PlayerMapXOffset, Me.CurrentMousePosition.Y - Me.PlayerMapYOffset)
-                If InsidePolygon(Points, 6, OffsetMousePosition) Then
-                    PlayerGraphics.DrawPolygon(New Pen(Brushes.Yellow), Points)
-                    Exit For
-                End If
-            Next
+            Dim OffsetMousePosition As New PointF(Me.CurrentMousePosition.X - Me.PlayerMapXOffset, Me.CurrentMousePosition.Y - Me.PlayerMapYOffset)
+            If InsidePolygon(Points, 6, OffsetMousePosition) Then
+                PlayerGraphics.DrawPolygon(New Pen(Brushes.Yellow), Points)
+                Exit For
+            End If
+        Next
     End Sub
 
     Private Sub HighlightSelectedHexes(ByRef g As Graphics)
@@ -712,7 +726,7 @@
 #Region "Event Handlers"
     Private Sub btnTurnAction_Build_Click(sender As System.Object, e As System.EventArgs) Handles btnTurnAction_Build.Click
         SetVisibility_TurnActionButtons(False)
-        TurnAction_Build()
+        Player_TurnAction_Build()
     End Sub
 
     Private Sub btnBuildBase_Missile_Click(sender As System.Object, e As System.EventArgs) Handles btnBuildBase_Missile.Click
