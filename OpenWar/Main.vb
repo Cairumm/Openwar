@@ -26,6 +26,8 @@
     ' The collection that holds the currently-selected hex(es)
     Private SelectedHexes As New List(Of Integer)
 
+    Private AtWar As Boolean
+
 #Region "Hex Map Variables"
     ' This is a list of the coordinates of the upper-left-hand coordinates of each hex
     ' Since they are the same for both the human and AI player, we only need to maintain one list
@@ -48,7 +50,6 @@
     ' game control variables
     Dim GameYear As Integer
     Dim GameOver As Boolean
-    Dim AtWar As Boolean
     Dim StartingCities As Integer
 #End Region
 
@@ -108,6 +109,8 @@
         BuildPlayerBase()
         SetMessage("Select base type for second base")
         BuildPlayerBase()
+
+        AIturn()
     End Sub
 
     Private Sub BuildPlayerBase()
@@ -163,6 +166,134 @@
         Return Me.rng.Next(1956, 1965)
     End Function
 
+    Private Sub TurnEndActivities()
+        NuclearAccidentCheck()
+
+        If Not AtWar Then
+            Me.GameYear += 1
+        End If
+
+        Me.Invalidate()
+    End Sub
+
+    Private Sub AIturn()
+        If AtWar Then
+            AITurn_War()
+        Else
+            If AIWarCheck() Then
+                AITurn_War()
+            Else
+                AITurn_Peace()
+            End If
+        End If
+
+        TurnEndActivities()
+    End Sub
+
+    Private Sub AITurn_Peace()
+        ' The AI has two options: Build or Spy
+        ' Eventually this will be determined by a die roll of some sort
+        Dim AIAction As String = "BUILD"
+
+        Select Case AIAction
+            Case "BUILD"
+                AI_BuildBase()
+                AI_BuildBase()
+            Case "SPY"
+                ' later
+        End Select
+    End Sub
+
+    Private Sub AI_BuildBase()
+
+        ' Choose which type of base to build
+        Dim BaseTypeChoices As New List(Of MapTile.MapTileType)
+
+        With BaseTypeChoices
+            .Add(MapTile.MapTileType.MissileBase)
+            .Add(MapTile.MapTileType.BomberBase)
+
+            If GetEmptyCoastalTileCount(AIMap) > 0 And Me.GameYear >= 1965 Then
+                .Add(MapTile.MapTileType.SubmarineBase)
+            End If
+
+            If Me.GameYear >= 1970 Then
+                .Add(MapTile.MapTileType.ABMBase)
+            End If
+        End With
+
+        Dim SelectedBaseType As MapTile.MapTileType = BaseTypeChoices(rng.Next(0, BaseTypeChoices.Count - 1))
+
+        ' Now that we we know what TYPE of base, where do we build it?
+        ' create a list of possible tiles
+        Dim PossibleBaseLocations As New List(Of MapTile)
+        Dim GoodTile As Boolean = False
+        For Each Tile As MapTile In AIMap
+            If Tile.TileType = MapTile.MapTileType.Empty Then
+                If SelectedBaseType = MapTile.MapTileType.SubmarineBase And Tile.IsCoastal Then
+                    GoodTile = True
+                End If
+                If SelectedBaseType <> MapTile.MapTileType.SubmarineBase Then
+                    GoodTile = True
+                End If
+            End If
+            If GoodTile Then PossibleBaseLocations.Add(Tile)
+        Next
+
+        ' Now that we have a list of possible locations, select one at random
+        Dim SelectedBaseLocation As MapTile = PossibleBaseLocations(rng.Next(0, PossibleBaseLocations.Count - 1))
+
+        ' Put the base on the map
+        SelectedBaseLocation.TileType = SelectedBaseType
+
+    End Sub
+
+
+
+    Private Sub AITurn_War()
+
+    End Sub
+
+    Private Function AIWarCheck() As Boolean
+        '
+        ' TODO: Implement logic to check if AI should declare war
+        '
+        Return False
+    End Function
+
+    Public Sub NuclearAccidentCheck()
+        If rng.Next(1, 500) = 1 Then
+            ' there has been a nuclear accident.
+            ' Which country?
+            Dim Map As List(Of MapTile)
+            Dim Country As String
+            If rng.Next(1, 2) = 1 Then
+                Map = PlayerMap
+                Country = PlayerCountryName
+            Else
+                Map = AIMap
+                Country = AICountryName
+            End If
+
+            SetMessage("There has been a nuclear accident in " & Country & "!")
+
+            ' Build a list of possible locations for the accident
+            ' only military bases are eligible
+            Dim PossibleAccidentLocations As New List(Of MapTile)
+            For Each Tile In Map
+                If Tile.TileType <> MapTile.MapTileType.Empty And Tile.TileType <> MapTile.MapTileType.City Then
+                    PossibleAccidentLocations.Add(Tile)
+                End If
+            Next
+
+            ' Now the we have a list of possible locations, select one
+            Dim AccidentLocation As MapTile = PossibleAccidentLocations(rng.Next(0, PossibleAccidentLocations.Count - 1))
+
+            AccidentLocation.IsNuked = True
+        End If
+    End Sub
+
+
 #Region "Map Routines"
     Private Sub GenerateHexPoints()
         Dim RowNumber As Integer = 1
@@ -211,8 +342,13 @@
 
     Public Sub SetupMaps()
         For x = 0 To 101
-            PlayerMap.Add(New MapTile)
-            AIMap.Add(New MapTile)
+            Dim NewPlayerMapTile As New MapTile
+            NewPlayerMapTile.TileNumber = x
+            PlayerMap.Add(NewPlayerMapTile)
+
+            Dim NewAIMapTile As New MapTile
+            NewAIMapTile.TileNumber = x
+            AIMap.Add(NewAIMapTile)
         Next
 
         SetMapTileProperties(PlayerMap)

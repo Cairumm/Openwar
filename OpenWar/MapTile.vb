@@ -6,6 +6,7 @@
     Public Property MapRow As Integer
     Public Property MapColumn As Integer
     Public Property IsVisibleToOpponent As Boolean
+    Public Property TileNumber As Integer
 
     Public Enum MapTileType
         Empty
