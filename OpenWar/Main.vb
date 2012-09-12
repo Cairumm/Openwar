@@ -85,11 +85,7 @@
         GenerateHexPoints()
         SetupMaps()
 
-        SetVisibility_TurnActionButtons(True)
-        SetVisibility_BuildBaseButtons(False)
-        SetVisibility_ConfirmSelectionButton(False)
-
-        Me.SetMessage("What will you do this turn?")
+        TurnActivities_Start()
     End Sub
 
     Private Function GetButtonAction() As String
@@ -110,7 +106,7 @@
         SetMessage("Select base type for second base")
         BuildPlayerBase()
 
-        AIturn()
+        AITurn()
     End Sub
 
     Private Sub BuildPlayerBase()
@@ -166,7 +162,15 @@
         Return Me.rng.Next(1956, 1965)
     End Function
 
-    Private Sub TurnEndActivities()
+    Private Sub TurnActivities_Start()
+        SetVisibility_TurnActionButtons(True)
+        SetVisibility_BuildBaseButtons(False)
+        SetVisibility_ConfirmSelectionButton(False)
+
+        Me.SetMessage("What will you do this turn?")
+    End Sub
+
+    Private Sub TurnActivities_End()
         NuclearAccidentCheck()
 
         If Not AtWar Then
@@ -174,9 +178,11 @@
         End If
 
         Me.Invalidate()
+
+        TurnActivities_Start()
     End Sub
 
-    Private Sub AIturn()
+    Private Sub AITurn()
         If AtWar Then
             AITurn_War()
         Else
@@ -187,7 +193,7 @@
             End If
         End If
 
-        TurnEndActivities()
+        TurnActivities_End()
     End Sub
 
     Private Sub AITurn_Peace()
