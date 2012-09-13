@@ -6,8 +6,8 @@
     Public Property PlayerCountryName As String
     Public Property AICountryName As String
 
-    Private PlayerMap As New List(Of MapTile)       ' The player map
-    Private AIMap As New List(Of MapTile)           ' the AI map
+    Private PlayerMap(1) As List(Of MapTile)       ' The player map(0) and the AI view of the player map (1)
+    Private AIMap(1) As List(Of MapTile)           ' the AI map(0) and the player's view of the AI map(1)
     Private rng As Random                           ' Random number generator used throughout the game
     Private ButtonAction As String = String.Empty   ' the button that was last clicked
     Private CurrentMousePosition As New PointF      ' updated by the MouseMove() event
@@ -41,6 +41,10 @@
     End Enum
     Private SelectionMode As SelectMode
 
+    Private Const PRIVATEMAP As Integer = 0
+    Private Const PUBLICMAP As Integer = 1
+
+
 #End Region
 
     Private Sub Main_Load(sender As System.Object, e As System.EventArgs) Handles MyBase.Load
@@ -54,6 +58,10 @@
         Me.rng = New Random(System.DateTime.Now.Millisecond)
 
         ' Initialize game variables
+        PlayerMap(0) = New List(Of MapTile)
+        PlayerMap(1) = New List(Of MapTile)
+        AIMap(0) = New List(Of MapTile)
+        AIMap(1) = New List(Of MapTile)
         Me.SideLength = 20
         Me.ShortSide = Convert.ToSingle(System.Math.Sin(30 * System.Math.PI / 180) * Me.SideLength)
         Me.LongSide = Convert.ToSingle(System.Math.Cos(30 * System.Math.PI / 180) * Me.SideLength)
@@ -136,7 +144,7 @@
         SetMessage("Select a location for your base and click ""Confirm""")
         Dim Location As Integer = SelectHex()
 
-        Me.PlayerMap(Location).TileType = BaseType
+        Me.PlayerMap(PRIVATEMAP)(Location).TileType = BaseType
         Me.Invalidate()
 
         Me.SelectionMode = SelectMode.None
@@ -226,7 +234,7 @@
             .Add(MapTile.MapTileType.MissileBase)
             .Add(MapTile.MapTileType.BomberBase)
 
-            If GetEmptyCoastalTileCount(AIMap) > 0 And Me.GameYear >= 1965 Then
+            If GetEmptyCoastalTileCount(AIMap(0)) > 0 And Me.GameYear >= 1965 Then
                 .Add(MapTile.MapTileType.SubmarineBase)
             End If
 
@@ -241,7 +249,7 @@
         ' create a list of possible tiles
         Dim PossibleBaseLocations As New List(Of MapTile)
         Dim GoodTile As Boolean = False
-        For Each Tile As MapTile In AIMap
+        For Each Tile As MapTile In AIMap(PRIVATEMAP)
             If Tile.TileType = MapTile.MapTileType.Empty Then
                 If SelectedBaseType = MapTile.MapTileType.SubmarineBase And Tile.IsCoastal Then
                     GoodTile = True
@@ -276,7 +284,7 @@
         If rng.Next(1, 500) = 1 Then
             ' there has been a nuclear accident.
             ' Which country?
-            Dim Map As List(Of MapTile)
+            Dim Map() As List(Of MapTile)
             Dim Country As String
             If rng.Next(1, 2) = 1 Then
                 Map = PlayerMap
@@ -291,25 +299,27 @@
             ' Build a list of possible locations for the accident
             ' only military bases are eligible
             Dim PossibleAccidentLocations As New List(Of MapTile)
-            For Each Tile In Map
+            For Each Tile In Map(0)
                 If Tile.TileType <> MapTile.MapTileType.Empty And Tile.TileType <> MapTile.MapTileType.City Then
                     PossibleAccidentLocations.Add(Tile)
                 End If
             Next
 
             ' Now the we have a list of possible locations, select one
-            Dim AccidentLocation As MapTile = PossibleAccidentLocations(rng.Next(0, PossibleAccidentLocations.Count - 1))
+            Dim AccidentLocation As Integer = rng.Next(0, PossibleAccidentLocations.Count - 1)
+            Map(PRIVATEMAP)(AccidentLocation).IsNuked = True
+            Map(PUBLICMAP)(AccidentLocation).IsNuked = True
 
-            AccidentLocation.IsNuked = True
         End If
     End Sub
 
-    Public Sub RevealTiles(Map As List(Of MapTile), Spy As Boolean)
+    Public Sub RevealTiles(Map() As List(Of MapTile), Spy As Boolean)
         ' On any given turn, a certain number of tiles are revealed to the other player
         ' Spying means that more tiles are revealed
         Dim TilesToReveal As Integer = If(Spy, 36, 12)
         For counter = 1 To TilesToReveal
-            Map(rng.Next(0, 101)).IsVisibleToOpponent = True
+            Dim TileNumber As Integer = rng.Next(0, 101)
+            Map(1)(TileNumber) = Map(0)(TileNumber)
         Next
     End Sub
 
@@ -364,18 +374,22 @@
         For x = 0 To 101
             Dim NewPlayerMapTile As New MapTile
             NewPlayerMapTile.TileNumber = x
-            PlayerMap.Add(NewPlayerMapTile)
+            PlayerMap(0).Add(NewPlayerMapTile)
+            PlayerMap(1).Add(NewPlayerMapTile)
 
             Dim NewAIMapTile As New MapTile
             NewAIMapTile.TileNumber = x
-            AIMap.Add(NewAIMapTile)
+            AIMap(0).Add(NewAIMapTile)
+            AIMap(1).Add(NewAIMapTile)
         Next
 
-        SetMapTileProperties(PlayerMap)
-        AddStartingMapItems(PlayerMap)
+        SetMapTileProperties(PlayerMap(PRIVATEMAP))
+        SetMapTileProperties(PlayerMap(PUBLICMAP))
+        AddStartingMapItems(PlayerMap(PRIVATEMAP))
 
-        SetMapTileProperties(AIMap)
-        AddStartingMapItems(AIMap)
+        SetMapTileProperties(AIMap(PRIVATEMAP))
+        SetMapTileProperties(AIMap(PUBLICMAP))
+        AddStartingMapItems(AIMap(PRIVATEMAP))
     End Sub
 
     Private Sub AddStartingMapItems(Map As List(Of MapTile))
@@ -482,7 +496,6 @@
             End Select
 
             ThisTile.TileType = MapTile.MapTileType.Empty
-            ThisTile.IsVisibleToOpponent = True
         Next
     End Sub
 
@@ -578,9 +591,9 @@
 
     Private Sub Player_UpdateMap(ByRef PlayerGraphics As Graphics)
         For TileCounter = 0 To 101
-            If PlayerMap(TileCounter).TileType <> MapTile.MapTileType.Empty Then
+            If PlayerMap(0)(TileCounter).TileType <> MapTile.MapTileType.Empty Then
                 Dim TileCharacter As String = String.Empty
-                Select Case PlayerMap(TileCounter).TileType
+                Select Case PlayerMap(0)(TileCounter).TileType
                     Case MapTile.MapTileType.BomberBase
                         TileCharacter = "B"
                     Case MapTile.MapTileType.MissileBase
@@ -602,9 +615,9 @@
 
     Private Sub AI_UpdateMap(AIGraphics As Graphics)
         For TileCounter = 0 To 101
-            If AIMap(TileCounter).TileType <> MapTile.MapTileType.Empty Then
+            If AIMap(1)(TileCounter).TileType <> MapTile.MapTileType.Empty Then
                 Dim TileCharacter As String = String.Empty
-                Select Case AIMap(TileCounter).TileType
+                Select Case AIMap(1)(TileCounter).TileType
                     Case MapTile.MapTileType.BomberBase
                         TileCharacter = "B"
                     Case MapTile.MapTileType.MissileBase
