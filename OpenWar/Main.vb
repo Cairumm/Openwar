@@ -1,4 +1,4 @@
-﻿Public Class Main
+Public Class Main
 
 #Region "Class-level Variables"
 
@@ -79,7 +79,7 @@
         Me.AtWar = False
 
         ' Build and store the list of hex coordinates
-        GenerateHexPoints()
+        GenerateHexPoints(7, 6)
         SetupMaps()
 
         TurnActivities_Start()
@@ -325,34 +325,24 @@
 
 
 #Region "Map Routines"
-    Private Sub GenerateHexPoints()
-        Dim RowNumber As Integer = 1
-        GenerateHexRow(1, RowNumber)
-        GenerateHexRow(2, RowNumber)
-        GenerateHexRow(3, RowNumber)
-        GenerateHexRow(4, RowNumber)
-        GenerateHexRow(5, RowNumber)
-        GenerateHexRow(6, RowNumber)
-        GenerateHexRow(5, RowNumber)
-        GenerateHexRow(6, RowNumber)
-        GenerateHexRow(5, RowNumber)
-        GenerateHexRow(6, RowNumber)
-        GenerateHexRow(5, RowNumber)
-        GenerateHexRow(6, RowNumber)
-        GenerateHexRow(5, RowNumber)
-        GenerateHexRow(6, RowNumber)
-        GenerateHexRow(5, RowNumber)
-        GenerateHexRow(6, RowNumber)
-        GenerateHexRow(5, RowNumber)
-        GenerateHexRow(6, RowNumber)
-        GenerateHexRow(5, RowNumber)
-        GenerateHexRow(4, RowNumber)
-        GenerateHexRow(3, RowNumber)
-        GenerateHexRow(2, RowNumber)
-        GenerateHexRow(1, RowNumber)
+    Private Sub GenerateHexPoints(ByVal VerticalLength As Integer, ByVal DiagonalLength As Integer)
+        Dim TotalRows As Integer = DiagonalLength * 2 + VerticalLength * 2 - 3
+        Dim HexesOnRow As Integer
+        For RowNumber As Integer = 1 To TotalRows
+            If RowNumber <= DiagonalLength Then
+                HexesOnRow = RowNumber
+            ElseIf RowNumber > (DiagonalLength + VerticalLength * 2 - 1) Then
+                HexesOnRow = TotalRows - RowNumber + 1
+            ElseIf RowNumber Mod 2 = 0 Then
+                HexesOnRow = DiagonalLength
+            Else
+                HexesOnRow = DiagonalLength - 1
+            End If
+            GenerateHexRow(HexesOnRow, RowNumber)
+        Next
     End Sub
 
-    Private Sub GenerateHexRow(Hexes As Integer, ByRef RowNumber As Integer)
+    Private Sub GenerateHexRow(ByVal Hexes As Integer, ByVal RowNumber As Integer)
 
         ' Calculate x of the starting point of the row
         Dim RowWidth As Single = (Me.HexWidth * Hexes) + (Me.SideLength * (Hexes - 1))
@@ -366,8 +356,6 @@
             Me.HexPoints.Add(New PointF(UpperLeft.X, UpperLeft.Y))
             UpperLeft.X += (2 * Me.SideLength) + (2 * Me.ShortSide)
         Next
-
-        RowNumber += 1
     End Sub
 
     Public Sub SetupMaps()
